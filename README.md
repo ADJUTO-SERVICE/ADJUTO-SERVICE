@@ -2,6 +2,8 @@
 
 ADJUTO SERVICEの配布・回収巡回をPCとiPhoneで管理する静的Webアプリです。
 
+[管理マップを開く](https://adjuto-service.github.io/ADJUTO-SERVICE/)
+
 ## 公開方法
 
 GitHubのSettings → Pagesで「Deploy from a branch」、ブランチ「main」、フォルダ「/docs」を選んでSaveします。既存の会社HP用リポジトリとは別に管理します。
@@ -31,3 +33,4 @@ PCとiPhoneの記録は自動同期しません。「バックアップ」→別
 ## 技術
 
 ビルド不要のHTML/CSS/JavaScript、Leaflet 1.9.4、IndexedDBを使用。相対パスによりGitHub PagesのプロジェクトURL配下で動作します。Leafletのライセンスはdocs/vendor/LICENSEに同梱しています。
+

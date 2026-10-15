@@ -66,7 +66,7 @@ struct RecorderView: View {
             Text(track.name).font(.headline)
             HStack { Text("\(track.pointCount)点"); Spacer(); Text(recorder.accuracy.map { "精度 ±\(Int(max(0, $0)))m" } ?? "測位待ち") }.font(.subheadline)
             Map(position: $camera) {
-                ForEach(track.parts) { part in
+                ForEach(track.parts.filter { $0.points.count >= 2 }) { part in
                     MapPolyline(coordinates: part.points.map { CLLocationCoordinate2D(latitude: $0.latitude, longitude: $0.longitude) }).stroke(teal, lineWidth: 5)
                 }
                 if let point = track.lastPoint {

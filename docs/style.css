@@ -9,3 +9,8 @@
 .edit-bar{left:56px;z-index:1200}
 
 @media(max-width:760px){.map-panel.nav-picking{position:relative!important}}
+
+.gps-section{border-top:1px solid var(--border);margin-top:20px;padding-top:18px}#gps-status{font-size:12px;line-height:1.7;overflow-wrap:anywhere}.gps-section button{min-height:44px}.gps-section>.wide{margin-top:8px}.map-panel.drawing #map::after{content:'＋';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);font-size:30px;color:#a02244;text-shadow:0 0 3px white;pointer-events:none;z-index:750}.edit-vertex{width:32px!important;height:32px!important;border:9px solid transparent;background:radial-gradient(circle,#fff 30%,#c5485b 35%,#c5485b 60%,transparent 65%);background-clip:padding-box}.edit-vertex.active{background:#ffe05c;border:7px solid #152f41}.edit-mid{width:26px!important;height:26px!important;border:7px solid transparent;background:#c5485b;background-clip:padding-box}.edit-bar button{min-height:44px}.gps-tracking .map-notice{bottom:30px}
+@media(max-width:760px){.map-panel.drawing{height:75dvh;min-height:500px}.edit-bar{left:10px;top:auto;bottom:30px;max-height:45%;overflow:auto}.edit-bar b{margin-bottom:6px}.map-panel.drawing .map-notice{display:none}}
+
+.gps-map-bar{position:absolute;left:10px;right:10px;bottom:36px;z-index:800;background:#fff;border:2px solid #b53264;border-radius:9px;padding:9px;box-shadow:0 2px 8px #1233}.gps-map-bar span{display:block;font-size:12px;margin-bottom:6px}.gps-map-bar>div{display:flex;flex-wrap:wrap;gap:5px}.gps-map-bar button{min-height:44px;font-size:12px}.map-panel:has(.gps-map-bar:not([hidden])) .map-notice{display:none}

@@ -1,0 +1,22 @@
+const assert=require('node:assert/strict');
+const G=require('../docs/gps-core.js'),C=require('../docs/core.js');
+const now=1792000000000,pos=(lat=35,lng=139,time=now,accuracy=10)=>({coords:{latitude:lat,longitude:lng,accuracy},timestamp:time});
+const first=G.sample(pos(),null,now).value;assert(first);
+assert(G.sample(pos(35,139,now,60),null,now).error);
+assert(G.sample(pos(35,139,now-31000),null,now).error);
+assert(G.sample(pos(35,139,now),first,now).error);
+assert(G.sample(pos(35,139,now+1000),first,now+1000).error);
+assert(G.sample(pos(36,139,now+1000),first,now+1000).error);
+assert(G.sample(pos(NaN),null,now).error);
+const second=G.sample(pos(35.0001,139,now+5000),first,now+5000).value;assert(second);
+const record={version:1,id:'gps-test',routeId:'r',status:'finished',parts:[[first,second],[first],[first,second]]};
+assert.equal(G.segments(G.validate(record)).length,2);
+assert.equal(G.segments(record)[0].confidence,'estimated');
+assert.throws(()=>G.validate({...record,parts:[[{point:[91,0],time:now,accuracy:5}]]}));
+const entry={id:'r',name:'互換性',types:['free'],date:'2026-10-01',partner:'担当者',planned:'2026-10-08',completed:true,completedDate:'2026-10-09',notes:'保持',segments:[{id:'old',points:[[35,139],[35.001,139]],confidence:'confirmed',reason:'保持'}],navStops:[{id:'s',name:'回収地点',point:[35,139],visited:true}],pixelPaths:[[[0,0],[100,100]]],anchors:[{pixel:[0,0],geo:[35,139],label:'a'},{pixel:[100,100],geo:[35.001,139.001],label:'b'}],image:'data:image/png;base64,AAAA',width:600,height:1067};
+const before=C.validate({version:2,entries:[entry]});const after=C.clone(before);after.entries[0].segments.push(...G.segments(record));const roundtrip=C.validate(JSON.parse(JSON.stringify(after)));assert.deepEqual(roundtrip,after);
+const restored=C.clone(roundtrip.entries[0]);restored.segments=restored.segments.slice(0,1);assert.deepEqual(restored,before.entries[0]);
+assert.equal(C.validate({version:1,entries:[{...entry,image:'legacy.png',paths:[[[35,139],[35.001,139]]]}]}).version,2);
+assert(C.navigationURL('google',roundtrip.entries[0].navStops).startsWith('https://www.google.com/'));
+console.log('PASS: GPS validation, outliers, pause-separated segments, v1/v2 backup roundtrip, existing records/images/navigation preserved');
+

@@ -103,12 +103,12 @@ $('draw-center').onclick=()=>{const p=map.getCenter();addDrawPoint([p.lat,p.lng]
 $('move-center').onclick=()=>{const s=draft?.segments[selectedSegment];if(mode!=='edit'||!s||selectedVertex===null)return;checkpoint();const p=map.getCenter();s.points[selectedVertex]=[p.lat,p.lng];s.confidence='estimated';s.reason='手動で位置を修正。再確認が必要。';renderMap();editHint();};
 
 // GPS drafts use a separate records key, without changing the database version or route schema.
-let gps=null,gpsWatch=null,gpsGeneration=0,gpsQueue=Promise.resolve(),gpsSaved=true,gpsLayer=null,gpsMessage='',gpsAccuracy=null,gpsCommitting=false;
+let gpsReady=false,gps=null,gpsWatch=null,gpsGeneration=0,gpsQueue=Promise.resolve(),gpsSaved=true,gpsLayer=null,gpsMessage='',gpsAccuracy=null,gpsCommitting=false;
 function gpsBusy(){return !!gps&&gps.status!=='finished';}
 function gpsCount(){return gps?gps.parts.reduce((n,p)=>n+p.length,0):0;}
 function renderGPS(){
- const busy=gpsBusy(),editable=!!mode||gpsCommitting;$('gps-map-bar').hidden=!gps||!!mode;$('gps-map-pause').hidden=gps?.status!=='recording';$('gps-map-resume').hidden=gps?.status!=='paused';$('gps-map-finish').disabled=!busy;$('gps-map-status').textContent=gps?`${{recording:'GPS記録中',paused:'GPS一時停止',finished:'GPS終了・未追加'}[gps.status]} · ${gpsCount()}点 · 精度 ${gpsAccuracy===null?'未取得':Math.round(gpsAccuracy)+'m'}`:'';$('gps-import').disabled=editable||!!gps||!db;
- $('gps-start').disabled=editable||!!gps||!db||!map;
+ const busy=gpsBusy(),editable=!!mode||gpsCommitting;$('gps-map-bar').hidden=!gps||!!mode;$('gps-map-pause').hidden=gps?.status!=='recording';$('gps-map-resume').hidden=gps?.status!=='paused';$('gps-map-finish').disabled=!busy;$('gps-map-status').textContent=gps?`${{recording:'GPS記録中',paused:'GPS一時停止',finished:'GPS終了・未追加'}[gps.status]} · ${gpsCount()}点 · 精度 ${gpsAccuracy===null?'未取得':Math.round(gpsAccuracy)+'m'}`:'';$('gps-import').disabled=editable||!!gps||!db||!gpsReady;
+ $('gps-start').disabled=editable||!!gps||!db||!map||!gpsReady;
  $('gps-pause').disabled=editable||gps?.status!=='recording';$('gps-resume').disabled=editable||gps?.status!=='paused';
  $('gps-finish').disabled=editable||!busy;$('gps-apply').disabled=editable||gps?.status!=='finished'||!AdjutoGPS.segments(gps).length;
  $('gps-discard').disabled=editable||!gps;$('gps-export').disabled=!gps;
@@ -136,16 +136,16 @@ function watchGPS(){
 }
 async function initGPS(){
  if(db)try{if(!await request('readonly','before-gps-upgrade-20261015'))await request('readwrite','before-gps-upgrade-20261015',C.clone(state));const stored=await request('readonly','gps-draft-v1');if(stored){gps=AdjutoGPS.validate(stored);if(gps.status==='recording'){gps.status='paused';gpsMessage='前回の記録を復元しました。再開すると新しい区間になります。';await saveGPS();}}}catch(err){gpsMessage=err.message;toast('GPS一時記録を読み込めません。元データは保持しています。');$('gps-start').disabled=true;return;}
- renderGPS();
+ gpsReady=true;renderGPS();
 }
-$('gps-start').onclick=async()=>{if(gps||!current()||!leaveAllowed()||!db)return;gps={version:1,id:'gps-'+crypto.randomUUID(),routeId:current().id,status:'paused',parts:[]};if(await saveGPS())watchGPS();};
+$('gps-start').onclick=async()=>{if(gps||!current()||!leaveAllowed()||!db)return;gps={version:1,id:'gps-'+crypto.randomUUID(),routeId:current().id,status:'paused',parts:[]};const started=gps;if(await saveGPS()&&gps===started&&gps.status==='paused')watchGPS();};
 $('gps-pause').onclick=()=>pauseGPS('再開すると別区間に記録します。');
 $('gps-resume').onclick=()=>{if(gps?.status==='paused'&&!mode&&gps.parts.length<1000)watchGPS();};
 $('gps-finish').onclick=async()=>{if(!gpsBusy())return;stopGPS();gps.status='finished';gpsMessage='地図を確認して「ルートへ追加」を押してください。';await saveGPS();};
 $('gps-export').onclick=()=>{if(gps)download(JSON.stringify(gps,null,2),'ADJUTO_GPS_draft_'+C.today()+'.json');};
 $('gps-discard').onclick=async()=>{if(!gps||!confirm('GPS一時記録を破棄しますか？必要なら先に「一時記録を書出し」で保存してください。配布記録は変更しません。'))return;stopGPS();await gpsQueue;try{await request('readwrite','gps-draft-v1',null);gps=null;gpsMessage='';renderGPS();}catch{toast('一時記録の削除に失敗しました。記録を保持しています。');}};
 $('gps-apply').onclick=async()=>{
- if(gps?.status!=='finished'||mode||gpsCommitting)return;const target=state.entries.find(e=>e.id===gps.routeId);if(!target)return toast('記録先のルートが見つかりません。一時記録を書出してください。');
+ if(gps?.status!=='finished'||mode||gpsCommitting)return;if(formDirty)return toast('入力中の配布・回収記録を先に「記録を保存」で保存してください。');const target=state.entries.find(e=>e.id===gps.routeId);if(!target)return toast('記録先のルートが見つかりません。一時記録を書出してください。');
  const additions=AdjutoGPS.segments(gps);if(!additions.length)return;gpsCommitting=true;document.querySelector('main').inert=true;renderGPS();await gpsQueue;await writeQueue;
  try{const next=C.clone(state),entry=next.entries.find(e=>e.id===gps.routeId);entry.segments.push(...additions);C.validate(next);
  await new Promise((resolve,reject)=>{const tx=db.transaction('records','readwrite'),store=tx.objectStore('records');store.put(C.clone(state),'before-gps-add');store.put(next,'state');store.put(null,'gps-draft-v1');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('保存中断'));});

@@ -1,0 +1,36 @@
+// !$*UTF8*$!
+{
+archiveVersion = 1;
+classes = {};
+objectVersion = 56;
+objects = {
+99392B8D835C79736E13B5E2 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/ADJUTORecorderApp.swift"; sourceTree = "<group>"; };
+B62D9B54F2A1C33E25131192 = {isa = PBXBuildFile; fileRef = 99392B8D835C79736E13B5E2; };
+D256610FB2613D4A99E45DCF = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/RecorderView.swift"; sourceTree = "<group>"; };
+F57A571C305D7B89D6A2E2C7 = {isa = PBXBuildFile; fileRef = D256610FB2613D4A99E45DCF; };
+614FE3BA2F1AE71B0B04A76E = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "App/LocationRecorder.swift"; sourceTree = "<group>"; };
+EC14B826B611A916D581677F = {isa = PBXBuildFile; fileRef = 614FE3BA2F1AE71B0B04A76E; };
+84EE3C0C77B81F313B9E1A44 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/RecorderCore/Track.swift"; sourceTree = "<group>"; };
+511326FFF4A15D27921A6218 = {isa = PBXBuildFile; fileRef = 84EE3C0C77B81F313B9E1A44; };
+9A3E7C7D61155DB2950811D2 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Sources/RecorderCore/TrackStore.swift"; sourceTree = "<group>"; };
+88CE12270DF860DB467AD7D7 = {isa = PBXBuildFile; fileRef = 9A3E7C7D61155DB2950811D2; };
+E22F3D16C14E3CEA667F4ECC = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App/Info.plist"; sourceTree = "<group>"; };
+F048BFA7B57836F484F1B9C1 = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "App/PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+3293CD42EAFEFD4DC7EBA14D = {isa = PBXBuildFile; fileRef = F048BFA7B57836F484F1B9C1; };
+A8792157CB4F27FB949C035F = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ADJUTORecorder.app; sourceTree = BUILT_PRODUCTS_DIR; };
+AD936FCBED631FA67E05C3EA = {isa = PBXGroup; children = (99392B8D835C79736E13B5E2, D256610FB2613D4A99E45DCF, 614FE3BA2F1AE71B0B04A76E, 84EE3C0C77B81F313B9E1A44, 9A3E7C7D61155DB2950811D2, E22F3D16C14E3CEA667F4ECC, F048BFA7B57836F484F1B9C1, 0A3E27B8CA818264D75C8D81); sourceTree = "<group>"; };
+0A3E27B8CA818264D75C8D81 = {isa = PBXGroup; children = (A8792157CB4F27FB949C035F); name = Products; sourceTree = "<group>"; };
+878A52FC5FF6A57D50B7B870 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (B62D9B54F2A1C33E25131192, F57A571C305D7B89D6A2E2C7, EC14B826B611A916D581677F, 511326FFF4A15D27921A6218, 88CE12270DF860DB467AD7D7); runOnlyForDeploymentPostprocessing = 0; };
+E2AA269EB967A8853A258BFA = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+41D311A605520FC7B8B9A980 = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (3293CD42EAFEFD4DC7EBA14D); runOnlyForDeploymentPostprocessing = 0; };
+34A04005BCAF206EEC990BD9 = {isa = PBXNativeTarget; buildConfigurationList = DB50D715B6F73174E8B96DCF; buildPhases = (878A52FC5FF6A57D50B7B870, E2AA269EB967A8853A258BFA, 41D311A605520FC7B8B9A980); buildRules = (); dependencies = (); name = ADJUTORecorder; productName = ADJUTORecorder; productReference = A8792157CB4F27FB949C035F; productType = "com.apple.product-type.application"; };
+244210E48437B6556980A702 = {isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = YES; LastUpgradeCheck = 1600; TargetAttributes = {34A04005BCAF206EEC990BD9 = {CreatedOnToolsVersion = 16.0; }; }; }; buildConfigurationList = 581A29AE5C70E973E6C527DB; compatibilityVersion = "Xcode 14.0"; developmentRegion = ja; hasScannedForEncodings = 0; knownRegions = (ja, en, Base); mainGroup = AD936FCBED631FA67E05C3EA; productRefGroup = 0A3E27B8CA818264D75C8D81; projectDirPath = ""; projectRoot = ""; targets = (34A04005BCAF206EEC990BD9); };
+73EBF6644258C120893E685D = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;}; name = Debug; };
+0B0C687DF8B6B8DC790B519C = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; SWIFT_STRICT_CONCURRENCY = targeted; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_COMPILATION_MODE = wholemodule;}; name = Release; };
+581A29AE5C70E973E6C527DB = {isa = XCConfigurationList; buildConfigurations = (73EBF6644258C120893E685D, 0B0C687DF8B6B8DC790B519C); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+6C7EFF6369083C8E1F2B1994 = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; SWIFT_STRICT_CONCURRENCY = targeted; PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.adjuto.recorder; INFOPLIST_FILE = App/Info.plist; GENERATE_INFOPLIST_FILE = NO; CODE_SIGN_STYLE = Automatic; TARGETED_DEVICE_FAMILY = 1; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; ENABLE_USER_SCRIPT_SANDBOXING = YES; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;}; name = Debug; };
+DD75E2CB1C510A828AC72D96 = {isa = XCBuildConfiguration; buildSettings = {SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 17.0; SWIFT_VERSION = 5.0; CLANG_ENABLE_MODULES = YES; SWIFT_STRICT_CONCURRENCY = targeted; PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.adjuto.recorder; INFOPLIST_FILE = App/Info.plist; GENERATE_INFOPLIST_FILE = NO; CODE_SIGN_STYLE = Automatic; TARGETED_DEVICE_FAMILY = 1; SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SWIFT_EMIT_LOC_STRINGS = YES; LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks"; ENABLE_USER_SCRIPT_SANDBOXING = YES; SWIFT_OPTIMIZATION_LEVEL = "-O"; SWIFT_COMPILATION_MODE = wholemodule;}; name = Release; };
+DB50D715B6F73174E8B96DCF = {isa = XCConfigurationList; buildConfigurations = (6C7EFF6369083C8E1F2B1994, DD75E2CB1C510A828AC72D96); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+};
+rootObject = 244210E48437B6556980A702;
+}

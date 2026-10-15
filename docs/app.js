@@ -25,7 +25,7 @@ function renderMap(){if(!map)return;lines.clearLayers();handles.clearLayers();co
  if(mode==='calibrate')calibration.forEach((a,i)=>{if(a.geo)L.marker(a.geo,{icon:L.divIcon({className:'',html:`<span class="map-label">基準 ${i+1}</span>`,iconSize:[1,1]})}).addTo(handles);});
 }
 function fitRoutes(all=false){if(!map)return;const entries=all?filtered():[current()].filter(Boolean),points=entries.flatMap(e=>[...e.segments.flatMap(s=>s.points),...(e.navStops||[]).map(s=>s.point)]);if(points.length)map.fitBounds(L.latLngBounds(points),{padding:[35,45],maxZoom:17,animate:false});else if(current())map.setView(current().center,16);}
-function leaveAllowed(){if(gpsCommitting){toast('GPSの保存完了をお待ちください。');return false;}if(typeof gpsBusy==='function'&&gpsBusy()){toast('GPS記録を終了してから操作してください。');return false;}if(mode){toast('地図の編集を保存するか中止してください。');return false;}return !formDirty||confirm('入力中の記録を破棄して移動しますか？');}
+function leaveAllowed(){if(trackDraft){toast('GPXの追加を確定するか中止してください。');if(!$('track-dialog').open)$('track-dialog').showModal();return false;}if(gpsCommitting){toast('GPSの保存完了をお待ちください。');return false;}if(typeof gpsBusy==='function'&&gpsBusy()){toast('GPS記録を終了してから操作してください。');return false;}if(mode){toast('地図の編集を保存するか中止してください。');return false;}return !formDirty||confirm('入力中の記録を破棄して移動しますか？');}
 function selectRoute(id,fit=true){if(!leaveAllowed())return;selected=id;renderList();renderDetail();renderMap();if(fit){fitRoutes();if(matchMedia('(max-width:760px)').matches)$('map').closest('.map-panel').scrollIntoView({block:'start'});}}
 function render(){renderList();renderDetail();renderMap();renderGPS();}
 $('route-list').addEventListener('click',ev=>{const button=ev.target.closest('[data-id]');if(button)selectRoute(button.dataset.id);});
@@ -33,7 +33,7 @@ $('route-list').addEventListener('click',ev=>{const button=ev.target.closest('[d
 form.addEventListener('input',()=>formDirty=true);
 function recalcPlan(){if(f('plannedAuto').checked)f('planned').value=C.addDays(f('date').value);f('planned').readOnly=f('plannedAuto').checked;formDirty=true;}
 f('date').addEventListener('change',recalcPlan);f('plannedAuto').addEventListener('change',recalcPlan);f('completed').addEventListener('change',()=>{f('completedDate').disabled=!f('completed').checked;if(f('completed').checked&&!f('completedDate').value)f('completedDate').value=C.today();if(!f('completed').checked)f('completedDate').value='';});
-form.addEventListener('submit',async ev=>{ev.preventDefault();if(mode)return toast('先に地図の編集を保存するか中止してください。');const e=current();if(!e)return;const updated={...e};['name','date','partner','planned','completedDate','notes'].forEach(k=>updated[k]=f(k).value.trim());updated.types=['normal','free'].filter(k=>f(k).checked);updated.plannedAuto=f('plannedAuto').checked;updated.completed=f('completed').checked;if(updated.plannedAuto)updated.planned=C.addDays(updated.date);if(!updated.types.includes('free')&&updated.completed)return toast('巡回完了には無料回収チラシの配布済みを指定してください。');try{C.validate({version:2,entries:[updated]});Object.assign(e,updated);const saved=await persist();render();toast(saved?'配布・回収の記録を更新しました。':'記録を更新しましたが未保存です。バックアップしてください。');}catch(err){toast(err.message);}});
+form.addEventListener('submit',async ev=>{ev.preventDefault();if(trackDraft)return toast('先にGPXの追加を確定するか中止してください。');if(mode)return toast('先に地図の編集を保存するか中止してください。');const e=current();if(!e)return;const updated={...e};['name','date','partner','planned','completedDate','notes'].forEach(k=>updated[k]=f(k).value.trim());updated.types=['normal','free'].filter(k=>f(k).checked);updated.plannedAuto=f('plannedAuto').checked;updated.completed=f('completed').checked;if(updated.plannedAuto)updated.planned=C.addDays(updated.date);if(!updated.types.includes('free')&&updated.completed)return toast('巡回完了には無料回収チラシの配布済みを指定してください。');try{C.validate({version:2,entries:[updated]});Object.assign(e,updated);const saved=await persist();render();toast(saved?'配布・回収の記録を更新しました。':'記録を更新しましたが未保存です。バックアップしてください。');}catch(err){toast(err.message);}});
 $('fit-all').onclick=()=>fitRoutes(true);$('fit-route').onclick=()=>fitRoutes();$('basemap').onchange=ev=>setBasemap(ev.target.value);
 function checkpoint(){history.push(C.clone({draft,drawPoints,selectedSegment,selectedVertex}));if(history.length>50)history.shift();}
 function beginEdit(kind){if(!current()||!leaveAllowed())return false;mode=kind;draft=C.clone(current());draft.navStops??=[];calibrationPaths=null;if(kind==='calibrate'&&!newPixels&&draft.anchors.length===2&&draft.segments.length){const inverse=C.inverseTransform(draft.anchors);calibrationPaths=draft.segments.map(s=>s.points.map(inverse));}history=[];drawPoints=[];selectedSegment=null;selectedVertex=null;calibration=[];$('edit-bar').hidden=false;$('nav-edit').disabled=true;$('nav-provider').disabled=true;$('image-wrap').classList.toggle('interactive',kind==='calibrate');cropMode=false;form.querySelectorAll('input,textarea,button').forEach(el=>el.disabled=true);['new-route','backup','restore','archive-route','review-all','draw-route','edit-route','calibrate'].forEach(id=>$(id).disabled=true);fitRoutes();renderMap();editHint();renderGPS();return true;}
@@ -145,7 +145,7 @@ $('gps-finish').onclick=async()=>{if(!gpsBusy())return;stopGPS();gps.status='fin
 $('gps-export').onclick=()=>{if(gps)download(JSON.stringify(gps,null,2),'ADJUTO_GPS_draft_'+C.today()+'.json');};
 $('gps-discard').onclick=async()=>{if(!gps||!confirm('GPS一時記録を破棄しますか？必要なら先に「一時記録を書出し」で保存してください。配布記録は変更しません。'))return;stopGPS();await gpsQueue;try{await request('readwrite','gps-draft-v1',null);gps=null;gpsMessage='';renderGPS();}catch{toast('一時記録の削除に失敗しました。記録を保持しています。');}};
 $('gps-apply').onclick=async()=>{
- if(gps?.status!=='finished'||mode||gpsCommitting)return;if(formDirty)return toast('入力中の配布・回収記録を先に「記録を保存」で保存してください。');const target=state.entries.find(e=>e.id===gps.routeId);if(!target)return toast('記録先のルートが見つかりません。一時記録を書出してください。');
+ if(gps?.status!=='finished'||mode||gpsCommitting)return;if(trackDraft)return toast('先にGPXの追加を確定するか中止してください。');if(formDirty)return toast('入力中の配布・回収記録を先に「記録を保存」で保存してください。');const target=state.entries.find(e=>e.id===gps.routeId);if(!target)return toast('記録先のルートが見つかりません。一時記録を書出してください。');
  const additions=AdjutoGPS.segments(gps);if(!additions.length)return;gpsCommitting=true;document.querySelector('main').inert=true;renderGPS();await gpsQueue;await writeQueue;
  try{const next=C.clone(state),entry=next.entries.find(e=>e.id===gps.routeId);entry.segments.push(...additions);C.validate(next);
  await new Promise((resolve,reject)=>{const tx=db.transaction('records','readwrite'),store=tx.objectStore('records');store.put(C.clone(state),'before-gps-add');store.put(next,'state');store.put(null,'gps-draft-v1');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('保存中断'));});
@@ -160,3 +160,43 @@ $('gps-import').onclick=()=>{if(!gps&&!mode&&db)$('gps-file').click();};
 $('gps-file').onchange=async ev=>{const file=ev.target.files[0];if(!file)return;try{if(gps||mode)throw Error('現在の一時記録を終了・追加してから読込してください。');if(file.size>10000000)throw Error('GPS記録は10MB以下にしてください。');const loaded=AdjutoGPS.validate(JSON.parse(await file.text()));if(!state.entries.some(e=>e.id===loaded.routeId))throw Error('元のルートが見つかりません。先に通常のJSONバックアップを読込してください。');loaded.status=loaded.status==='finished'?'finished':'paused';gps=loaded;gpsMessage='一時記録を読み込みました。';await saveGPS();}catch(err){toast(err.message);}finally{ev.target.value='';}};
 
 $('gps-map-pause').onclick=()=>$('gps-pause').click();$('gps-map-resume').onclick=()=>$('gps-resume').click();$('gps-map-finish').onclick=()=>$('gps-finish').click();$('gps-locate').onclick=()=>{const p=gps?.parts.flat().at(-1);if(p)map.setView(p.point,17);else toast('まだ記録地点がありません。');};
+
+// Import native tracks without replacing any existing route or record.
+let trackDraft=null,trackLayer=null,trackSaving=false;
+$('track-import').onclick=()=>{if(formDirty)return toast('先に入力中の記録を保存してください。');if(current()&&leaveAllowed())$('track-file').click();};
+$('track-file').onchange=async ev=>{
+ const file=ev.target.files[0],routeId=selected;if(!file)return;
+ try{
+  if(trackDraft||mode||gpsBusy()||formDirty)throw Error('現在の編集・GPS記録を終了してから読込してください。');
+  if(file.size>10000000)throw Error('GPXは10MB以下にしてください。');
+  const text=await file.text(),parsed=AdjutoGPX.parse(text);
+  const bytes=new TextEncoder().encode(text),hash=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(b=>b.toString(16).padStart(2,'0')).join('');
+  const prefix='gpx-'+(parsed.trackId||hash),entry=current();
+  if(!entry||entry.id!==routeId||mode||gpsBusy()||formDirty||trackDraft)throw Error('操作状態が変わりました。もう一度読込してください。');
+  const reason=`iPhone GPS軌跡：${parsed.name||file.name}。${parsed.worker?'記録者：'+parsed.worker+'。':''}${parsed.site?'現場：'+parsed.site+'。':''}測位誤差の確認が必要。`.slice(0,500);
+  const segments=parsed.parts.map((points,index)=>({id:prefix+'-'+index,points,confidence:'estimated',reason}));
+  if(entry.segments.some(s=>s.id.startsWith(prefix+'-')))throw Error('このGPS記録はすでに追加されています。');
+  const next=C.clone(state),target=next.entries.find(e=>e.id===routeId);target.segments.push(...segments);C.validate(next);
+  trackDraft={routeId,segments};
+  $('track-summary').textContent=`追加先：${entry.name} / ${parsed.name||file.name} / ${segments.length}区間・${parsed.count}点${parsed.isolated?'（孤立した'+parsed.isolated+'点は追加しません）':''}。${parsed.worker?'記録者：'+parsed.worker+'。':''}${parsed.site?'現場：'+parsed.site+'。':''}`;
+  trackLayer=L.layerGroup().addTo(map);segments.forEach(s=>L.polyline(s.points,{color:'#b53264',weight:6,interactive:false}).addTo(trackLayer));
+  $('track-confirm').hidden=false;$('track-dialog').showModal();
+ }catch(err){toast('軌跡を読込できません：'+err.message);}finally{ev.target.value='';}
+};
+function closeTrackPreview(){if(trackLayer&&map)map.removeLayer(trackLayer);trackLayer=null;trackDraft=null;$('track-confirm').hidden=true;$('track-dialog').close();}
+$('track-preview').onclick=()=>{if(!trackDraft)return;$('track-dialog').close();map.fitBounds(L.latLngBounds(trackDraft.segments.flatMap(s=>s.points)),{padding:[30,30],maxZoom:18});$('map').closest('.map-panel').scrollIntoView({block:'start'});toast('ピンク色が追加する軌跡です。「GPXの追加確認へ」で追加・中止を選べます。');};
+$('track-confirm').onclick=()=>{if(trackDraft)$('track-dialog').showModal();};
+$('track-cancel').onclick=()=>{if(!trackSaving)closeTrackPreview();};
+$('track-dialog').addEventListener('cancel',ev=>{ev.preventDefault();if(!trackSaving)closeTrackPreview();});
+$('track-apply').onclick=async()=>{
+ if(!trackDraft||trackSaving)return;trackSaving=true;$('track-apply').disabled=true;$('track-cancel').disabled=true;$('track-preview').disabled=true;
+ try{
+  if(formDirty)throw Error('入力中の記録があります。GPX読込を中止し、先に記録を保存してください');await writeQueue;if(!db)throw Error('端末内保存が利用できません');
+  const next=C.clone(state),entry=next.entries.find(e=>e.id===trackDraft.routeId);if(!entry)throw Error('追加先ルートがありません');
+  if(entry.segments.some(s=>trackDraft.segments.some(t=>s.id===t.id)))throw Error('この軌跡はすでに追加されています');
+  entry.segments.push(...trackDraft.segments);C.validate(next);
+  await new Promise((resolve,reject)=>{const tx=db.transaction('records','readwrite'),store=tx.objectStore('records');store.put(C.clone(state),'before-gpx-import');store.put(next,'state');tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||Error('保存中断'));});
+  state=next;selected=entry.id;closeTrackPreview();$('save-state').textContent='端末に保存済み';render();fitRoutes();toast('iPhoneの軌跡を追記しました。必要なら「線・点を編集」で修正してください。');
+ }catch(err){toast('追加できません。既存記録は保持しています：'+err.message);}finally{trackSaving=false;$('track-apply').disabled=false;$('track-cancel').disabled=false;$('track-preview').disabled=false;}
+};
+window.addEventListener('beforeunload',ev=>{if(trackDraft){ev.preventDefault();ev.returnValue='';}});

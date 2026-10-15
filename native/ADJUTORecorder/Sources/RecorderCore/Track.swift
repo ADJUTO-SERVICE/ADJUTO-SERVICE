@@ -37,7 +37,7 @@ public struct Track: Codable, Identifiable {
     }
 
     public mutating func resume() {
-        guard status != .finished else { return }
+        guard status == .paused else { return }
         status = .recording
         parts.append(TrackPart())
     }

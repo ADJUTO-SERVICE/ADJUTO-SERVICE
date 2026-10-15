@@ -1,0 +1,25 @@
+name: iPhone recorder build
+on:
+  pull_request:
+    paths:
+      - 'native/**'
+      - '.github/workflows/ios-recorder.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test recording and storage logic
+        run: swift test --package-path native/ADJUTORecorder
+      - name: Build iPhone simulator app without signing
+        run: >-
+          xcodebuild -project native/ADJUTORecorder/ADJUTORecorder.xcodeproj
+          -scheme ADJUTORecorder -configuration Debug
+          -sdk iphonesimulator -destination 'generic/platform=iOS Simulator'
+          -derivedDataPath build/ios CODE_SIGNING_ALLOWED=NO build
+      - name: Launch app in iPhone simulator
+        run: bash native/ADJUTORecorder/ci/simulator-smoke.sh

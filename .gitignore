@@ -1,3 +1,14 @@
 private-data/
 *_backup_*.json
 初期6ルート.json
+
+# Native build products and local signing
+.build/
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.p12
+*.mobileprovision
+*.ipa
+*.gpx

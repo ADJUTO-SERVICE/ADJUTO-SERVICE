@@ -12,6 +12,18 @@
  function simplify(points,tolerance=2){if(points.length<3)return points;const keep=new Set([0,points.length-1]),stack=[[0,points.length-1]];while(stack.length){const [a,b]=stack.pop(),p=points[a],q=points[b],vx=q[0]-p[0],vy=q[1]-p[1],length=Math.hypot(vx,vy);let furthest=-1,maximum=tolerance;for(let i=a+1;i<b;i++){const r=points[i],d=length?Math.abs(vx*(r[1]-p[1])-vy*(r[0]-p[0]))/length:Math.hypot(r[0]-p[0],r[1]-p[1]);if(d>maximum){maximum=d;furthest=i;}}if(furthest!==-1){keep.add(furthest);stack.push([a,furthest],[furthest,b]);}}return [...keep].sort((a,b)=>a-b).map(i=>points[i]);}
  function due(e,now=today()){if(!e.types.includes('free'))return '対象外';if(e.completed)return '巡回完了';if(!e.planned)return '予定日未設定';return e.planned<now?'期限超過':e.planned===now?'本日回収':'回収予定';}
  function navigationURL(provider,stops){if(!Array.isArray(stops)||!stops.length)return '';const selected=provider==='google'?stops.slice(0,4):stops.slice(0,14);const position=s=>{const p=s.point;if(!Array.isArray(p)||p.length!==2||p.some(x=>typeof x!=='number'||!Number.isFinite(x))||Math.abs(p[0])>85||Math.abs(p[1])>180)throw Error('ナビ地点の座標が不正です');return p.map(x=>x.toFixed(6)).join(',');};const url=new URL(provider==='google'?'https://www.google.com/maps/dir/':'https://maps.apple.com/directions');url.searchParams.set('destination',position(selected.at(-1)));if(provider==='google'){url.searchParams.set('api','1');url.searchParams.set('travelmode','driving');url.searchParams.set('dir_action','navigate');if(selected.length>1)url.searchParams.set('waypoints',selected.slice(0,-1).map(position).join('|'));}else{url.searchParams.set('mode','driving');selected.slice(0,-1).forEach(s=>url.searchParams.append('waypoint',position(s)));}return url.toString();}
+ function validateDistribution(record){
+  if(!record||typeof record!=='object')throw Error('GPX記録の形式が不正です');
+  const {name,original,sha256,meters,pointCount,startedAt,endedAt}=record;
+  if(typeof name!=='string'||!name||name.length>255||
+     typeof original!=='string'||original.length>13333336||!/^[A-Za-z0-9+/]+={0,2}$/.test(original)||original.length%4!==0||
+     typeof sha256!=='string'||!/^[a-f0-9]{64}$/.test(sha256)||
+     !Number.isFinite(meters)||meters<0||!Number.isInteger(pointCount)||pointCount<2||pointCount>100000||
+     ![startedAt,endedAt].every(value=>value===null||Number.isFinite(value)&&Math.abs(value)<=8640000000000000)){
+   throw Error('GPX記録の形式が不正です');
+  }
+  return {name,original,sha256,meters,pointCount,startedAt,endedAt};
+ }
  function validate(data){
   if(!data||![1,2].includes(data.version)||!Array.isArray(data.entries)||data.entries.length>200)throw Error('対応する管理マップJSONではありません（version 1 / 2）');
   const ids=new Set();let count=0;
@@ -33,7 +45,8 @@
    const navRaw=e.navStops??[];if(!Array.isArray(navRaw)||navRaw.length>14)throw Error('ナビ地点は最大14件です');const navIds=new Set();const navStops=navRaw.map((s,i)=>{if(!s||typeof s!=='object')throw Error('ナビ地点が不正です');const id=text(s.id,100)||'stop-'+i;if(navIds.has(id))throw Error('ナビ地点IDが重複しています');navIds.add(id);if(s.visited!==undefined&&typeof s.visited!=='boolean')throw Error('立寄状態が不正です');return {id,name:text(s.name,80)||'立ち寄り '+(i+1),point:coord(s.point),visited:!!s.visited};});
    const width=e.width??600,height=e.height??1067;if(![width,height].every(n=>Number.isInteger(n)&&n>0&&n<=10000))throw Error('画像サイズが不正です');
    for(const key of ['completed','archived','plannedAuto'])if(e[key]!==undefined&&typeof e[key]!=='boolean')throw Error('状態情報が不正です');
-   return {id,name,region:text(e.region,50)||name.replace(/周辺.*$/,''),distance:text(e.distance,50),image,types,date,planned,plannedAuto:typeof e.plannedAuto==='boolean'?e.plannedAuto:!planned,partner:text(e.partner,100),completed:!!e.completed,completedDate,notes:text(e.notes,3000),segments:clean,navStops,pixelPaths:clone(pixelPaths),anchors,width,height,center:e.center?coord(e.center):[35.535,139.647],archived:!!e.archived};
+   const distribution=e.distribution===undefined?{}:{distribution:validateDistribution(e.distribution)};
+   return {...distribution,id,name,region:text(e.region,50)||name.replace(/周辺.*$/,''),distance:text(e.distance,50),image,types,date,planned,plannedAuto:typeof e.plannedAuto==='boolean'?e.plannedAuto:!planned,partner:text(e.partner,100),completed:!!e.completed,completedDate,notes:text(e.notes,3000),segments:clean,navStops,pixelPaths:clone(pixelPaths),anchors,width,height,center:e.center?coord(e.center):[35.535,139.647],archived:!!e.archived};
   });return {version:2,entries};
  }
  const api={clone,validDate,addDays,today,project,unproject,transform,inverseTransform,simplify,segmentsFromPixels,navigationURL,due,validate};root.AdjutoCore=api;if(typeof module!=='undefined')module.exports=api;
